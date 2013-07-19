@@ -89,7 +89,7 @@ class FFI::Gen
       return if @constants.size < 2
       names = @constants.map { |constant| constant[:name].parts }
       names.each(&:shift) while names.map(&:first).uniq.size == 1 and @name.parts.map(&:downcase).include? names.first.first.downcase
-      names.each(&:pop) while names.map(&:last).uniq.size == 1 and @name.parts.map(&:downcase).include? names.first.last.downcase
+      names.each(&:pop)   while names.map(&:last).uniq.size == 1  and @name.parts.map(&:downcase).include? names.first.last.downcase
     end
   end
 
@@ -689,7 +689,7 @@ class FFI::Gen
     self.new(options).generate
   end
 
-  require "ffi/gen/ruby_output"
+  require "ffi/gen/fiddle_output"
   require "ffi/gen/java_output"
 end
 
