@@ -439,7 +439,7 @@ class FFI::Gen
       when :struct_decl, :union_decl
         type = Clang.get_cursor_type(declaration_cursor)
         struct = @declarations_by_type[type] || StructOrUnion.new(self, name, (declaration_cursor[:kind] == :union_decl))
-        # raise "fields for #{name} should be empty!" unless struct.fields.empty?
+        raise "fields for #{name} should be empty!" unless struct.fields.empty?
         struct.description.concat comment
         struct.types << Clang.get_cursor_type(declaration_cursor)
 
