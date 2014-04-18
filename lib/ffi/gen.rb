@@ -426,6 +426,7 @@ class FFI::Gen
               next_constant_value
             end
 
+            raise ArgumentError unless constant_value
             constants << { name: constant_name, value: constant_value, comment: constant_description }
             next_constant_value = constant_value + 1
           rescue ArgumentError
@@ -519,7 +520,7 @@ class FFI::Gen
         function = FunctionOrCallback.new self, name, parameters, return_type, false, @blocking.include?(name.raw), function_description, return_value_description
 
         pointee_declaration = first_parameter_type && get_pointee_declaration(first_parameter_type)
-        if pointee_declaration
+        if pointee_declaration && pointee_declaration.name
           type_prefix = pointee_declaration.name.parts.join.downcase
           function_name_parts = name.parts.dup
           while fn_name = function_name_parts.first and type_prefix.start_with?(fn_name.downcase)
@@ -581,24 +582,32 @@ class FFI::Gen
 
   def resolve_type(full_type, is_array = false)
     canonical_type = Clang.get_canonical_type full_type
-    data_array = case canonical_type[:kind]
+    case canonical_type[:kind]
     when :void, :bool, :u_char, :u_short, :u_int, :u_long, :u_long_long, :char_s, :s_char, :short, :int, :long, :long_long, :float, :double
       PrimitiveType.new canonical_type[:kind]
-    when :pointer
+    when :pointer, :incomplete_array, :block_pointer
       if is_array
         ArrayType.new resolve_type(Clang.get_pointee_type(canonical_type)), nil
       else
-        pointee_type = Clang.get_pointee_type canonical_type
-        type = case pointee_type[:kind]
-        when :char_s
-          StringType.new
-        when :record
-          @declarations_by_type[Clang.get_cursor_type(Clang.get_type_declaration(pointee_type))]
-        when :function_proto
-          @declarations_by_type[full_type]
-        else
-          nil
-        end
+        pointee_type =
+          case canonical_type[:kind]
+          when :pointer, :block_pointer
+            Clang.get_pointee_type canonical_type
+          when :incomplete_array
+            Clang.get_array_element_type canonical_type
+          end
+
+        type =
+          case pointee_type[:kind]
+          when :char_s
+            StringType.new
+          when :record
+            @declarations_by_type[Clang.get_cursor_type(Clang.get_type_declaration(pointee_type))]
+          when :function_proto
+            @declarations_by_type[full_type]
+          else
+            nil
+          end
 
         if type.nil?
           pointer_depth = 0
@@ -634,10 +643,10 @@ class FFI::Gen
       @declarations_by_type[canonical_type] || UnknownType.new # TODO
     when :constant_array
       ArrayType.new resolve_type(Clang.get_array_element_type(canonical_type)), Clang.get_array_size(canonical_type)
-    when :unexposed, :function_proto
+    when :unexposed, :function_proto, :invalid
       UnknownType.new
     else
-      raise NotImplementedError, "No translation for values of type #{canonical_type[:kind]}"
+      raise NotImplementedError, "No translation for values of type #{canonical_type[:kind]} (#{Clang.get_type_spelling(full_type).to_s_and_dispose})"
     end
   end
 
