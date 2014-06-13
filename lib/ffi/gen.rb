@@ -620,7 +620,6 @@ class FFI::Gen
     when :record
       type = @declarations_by_type[canonical_type]
       type &&= ByValueType.new(type)
-      binding.pry unless type
       type || UnknownType.new # TODO
     when :enum
       @declarations_by_type[canonical_type] || UnknownType.new # TODO
