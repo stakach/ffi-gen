@@ -319,7 +319,7 @@ class FFI::Gen
     return @declarations unless @declarations.nil?
 
     header_files = []
-    Clang.get_inclusions translation_unit, proc { |included_file, inclusion_stack, include_length, client_data|
+    Clang.get_inclusions translation_unit, ->(included_file, include_length, client_data){
       filename = Clang.get_file_name(included_file).to_s_and_dispose
       header_files << included_file if @headers.any? { |header| header.is_a?(Regexp) ? header =~ filename : filename.end_with?(header) }
     }, nil
@@ -341,32 +341,15 @@ class FFI::Gen
     @declarations_by_name = {}
     @declarations_by_type = {}
     previous_declaration_end = Clang.get_cursor_location unit_cursor
-
-    analyze = -> (declaration_cursor, index) do
+    declaration_cursors.each_with_index do |declaration_cursor, index|
       comment = []
       unless is_nested_declaration[index]
         comment_range = Clang.get_range previous_declaration_end, Clang.get_cursor_location(declaration_cursor)
         comment, _ = extract_comment translation_unit, comment_range
         previous_declaration_end = Clang.get_range_end Clang.get_cursor_extent(declaration_cursor)
       end
-
       read_declaration declaration_cursor, comment
     end
-
-    [:enum_decl, :union_decl, :struct_decl, :function_decl, :typedef_decl].each do |kind|
-      empty = !declaration_cursors.any?{ |d| d[:kind] == kind }
-      while not empty
-        empty = true
-        declaration_cursors.each_with_index do |declaration_cursor, index|
-          next unless declaration_cursor[:kind] == kind
-          analyze[declaration_cursor, index]
-          declaration_cursors.delete declaration_cursor
-          empty = false
-        end
-      end
-    end
-
-    declaration_cursors.each_with_index(&analyze)
 
     @declarations
   end
@@ -516,7 +499,6 @@ class FFI::Gen
           parameter[:description] ||= []
         end
 
-
         function = FunctionOrCallback.new self, name, parameters, return_type, false, @blocking.include?(name.raw), function_description, return_value_description
 
         pointee_declaration = first_parameter_type && get_pointee_declaration(first_parameter_type)
@@ -554,9 +536,9 @@ class FFI::Gen
         elsif typedef_children.size > 1
           return_type = resolve_type Clang.get_cursor_type(typedef_children.first)
           parameters = []
-          typedef_children[1..-1].each do |param_decl|
-            param_name = read_name param_decl
-            param_type = resolve_type(Clang.get_cursor_type(param_decl))
+          typedef_children[1..-1].each do |pd|
+            param_name = read_name(pd)
+            param_type = resolve_type(Clang.get_cursor_type(pd))
             param_name ||= param_type.name
             parameters << { name:param_name, type: param_type, description: [] }
           end
@@ -638,6 +620,7 @@ class FFI::Gen
     when :record
       type = @declarations_by_type[canonical_type]
       type &&= ByValueType.new(type)
+      binding.pry unless type
       type || UnknownType.new # TODO
     when :enum
       @declarations_by_type[canonical_type] || UnknownType.new # TODO
@@ -706,7 +689,7 @@ if __FILE__ == $0
   FFI::Gen.generate(
     module_name: "FFI::Gen::Clang",
     ffi_lib:     "clang",
-    headers:     ["clang-c/Index.h"],
+    headers:     ["clang-c/CXString.h", "clang-c/Index.h"],
     cflags:      `llvm-config --cflags`.split(" "),
     prefixes:    ["clang_", "CX"],
     output:      File.join(File.dirname(__FILE__), "gen/clang.rb")

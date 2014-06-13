@@ -5,35 +5,8 @@ class FFI::Gen
     writer.indent do
       writer.puts "extend FFI::Library"
       writer.puts "ffi_lib_flags #{@ffi_lib_flags.map(&:inspect).join(', ')}" if @ffi_lib_flags
-      writer.puts "ffi_lib #{@ffi_lib}", "" if @ffi_lib
+      writer.puts "ffi_lib #{@ffi_lib.inspect}", "" if @ffi_lib
 
-      [Enum, StructOrUnion].each do |kind|
-        writer.puts "##"
-        writer.puts "# Writing #{kind}"
-        writer.puts "#"
-        empty = !declarations.any?{ |d| d.kind_of?(kind) }
-        while not empty
-          empty = true
-          declarations.each do |declaration|
-            next unless declaration.kind_of?(kind)
-            declaration.write_ruby writer
-            declarations.delete declaration
-            empty = false
-          end
-        end
-      end
-
-      writer.puts "##"
-      writer.puts "# Writing Callbacks"
-      writer.puts "#"
-      declarations.select(&:is_callback).each do |declaration|
-        declaration.write_ruby writer
-        declarations.delete declaration
-      end
-
-      writer.puts "##"
-      writer.puts "# Writing Functions"
-      writer.puts "#"
       declarations.each do |declaration|
         declaration.write_ruby writer
       end
@@ -164,11 +137,14 @@ class FFI::Gen
     end
 
     def ruby_ffi_type
-      @written ? ruby_name : ":pointer"
+      unless @written
+        warn 'dependency %s not written' % ruby_name
+      end
+      ruby_name
     end
 
     def ruby_description
-      @written ? ruby_name : "FFI::Pointer(*#{ruby_name})"
+      ruby_name
     end
   end
 
@@ -177,10 +153,9 @@ class FFI::Gen
       writer.puts "@blocking = true" if @blocking
       writer.comment do
         writer.write_description @function_description
-        writer.puts "", "_This entry is only for documentation and no real method._" if @is_callback
-        writer.puts "", "@method #{@is_callback ? "`callback_#{ruby_name}`" : ruby_name}(#{@parameters.map{ |parameter| parameter[:name].to_ruby_downcase }.join(', ')})"
-        @parameters.each do |parameter|
-          writer.write_description parameter[:description], false, "@param [#{parameter[:type].ruby_description}] #{parameter[:name].to_ruby_downcase} ", "  "
+        writer.puts "", "@method #{@is_callback ? "`callback_#{ruby_name}`" : ruby_name}(#{@parameters.map{ |p| p[:name].to_ruby_downcase if p[:name]}.join(', ')})"
+        @parameters.each do |p|
+          writer.write_description p[:description], false, "@param [#{p[:type].ruby_description}] #{p[:name].to_ruby_downcase if p[:name]} ", "  "
         end
         writer.write_description @return_value_description, false, "@return [#{@return_type.ruby_description}] ", "  "
         writer.puts "@scope class", ""
@@ -195,7 +170,7 @@ class FFI::Gen
     end
 
     def ruby_name
-      @ruby_name ||= @name.to_ruby_downcase
+      @name.to_ruby_downcase
     end
 
     def ruby_ffi_type
