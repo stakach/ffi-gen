@@ -7,7 +7,7 @@ module FFI::Gen::Clang
   # :kind ::
   #   (Symbol from `enum_idx_obj_c_container_kind`)
   class IdxObjCContainerDeclInfo < FFI::Struct
-    layout :decl_info, IdxDeclInfo,
+    layout :decl_info, IdxDeclInfo.by_ref,
            :kind, :idx_obj_c_container_kind
   end
 

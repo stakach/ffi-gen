@@ -9,7 +9,7 @@ module FFI::Gen::Clang
   # :loc ::
   #   (IdxLoc)
   class IdxBaseClassInfo < FFI::Struct
-    layout :base, IdxEntityInfo,
+    layout :base, IdxEntityInfo.by_ref,
            :cursor, Cursor.by_value,
            :loc, IdxLoc.by_value
   end

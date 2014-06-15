@@ -31,15 +31,15 @@ module FFI::Gen::Clang
   # :flags ::
   #   (Integer)
   class IdxDeclInfo < FFI::Struct
-    layout :entity_info, IdxEntityInfo,
+    layout :entity_info, IdxEntityInfo.by_ref,
            :cursor, Cursor.by_value,
            :loc, IdxLoc.by_value,
-           :semantic_container, IdxContainerInfo,
-           :lexical_container, IdxContainerInfo,
+           :semantic_container, IdxContainerInfo.by_ref,
+           :lexical_container, IdxContainerInfo.by_ref,
            :is_redeclaration, :int,
            :is_definition, :int,
            :is_container, :int,
-           :decl_as_container, IdxContainerInfo,
+           :decl_as_container, IdxContainerInfo.by_ref,
            :is_implicit, :int,
            :attributes, :pointer,
            :num_attributes, :uint,

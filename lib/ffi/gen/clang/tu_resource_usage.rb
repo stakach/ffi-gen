@@ -12,7 +12,7 @@ module FFI::Gen::Clang
   class TUResourceUsage < FFI::Struct
     layout :data, :pointer,
            :num_entries, :uint,
-           :entries, TUResourceUsageEntry
+           :entries, TUResourceUsageEntry.by_ref
   end
 
 end

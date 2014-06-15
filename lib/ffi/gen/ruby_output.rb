@@ -195,8 +195,8 @@ class FFI::Gen
     end
 
     def ruby_ffi_type
-      ruby_name
-      # "#{ruby_name}.by_ref"
+      # ruby_name
+      "#{ruby_name}.by_ref"
     end
 
     def ruby_description
@@ -369,11 +369,11 @@ class FFI::Gen
 
   class UnknownType
     def ruby_name
-      "unknown"
+      name.to_ruby_downcase
     end
 
     def ruby_ffi_type
-      ":char"
+      ":#{ruby_name}"
     end
   end
 

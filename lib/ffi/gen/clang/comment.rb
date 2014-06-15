@@ -5,10 +5,10 @@ module FFI::Gen::Clang
   # :ast_node ::
   #   (FFI::Pointer(*Void))
   # :translation_unit ::
-  #   (TranslationUnitImpl)
+  #   (TranslationUnit)
   class Comment < FFI::Struct
     layout :ast_node, :pointer,
-           :translation_unit, TranslationUnitImpl
+           :translation_unit, TranslationUnit.by_ref
   end
 
 end

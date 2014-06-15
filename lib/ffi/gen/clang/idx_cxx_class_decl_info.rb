@@ -9,7 +9,7 @@ module FFI::Gen::Clang
   # :num_bases ::
   #   (Integer)
   class IdxCXXClassDeclInfo < FFI::Struct
-    layout :decl_info, IdxDeclInfo,
+    layout :decl_info, IdxDeclInfo.by_ref,
            :bases, :pointer,
            :num_bases, :uint
   end

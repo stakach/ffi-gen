@@ -12,7 +12,7 @@ module FFI::Gen::Clang
   #   (Integer) The number of code-completion results stored in the
   #   \c Results array.
   class CodeCompleteResults < FFI::Struct
-    layout :results, CompletionResult,
+    layout :results, CompletionResult.by_ref,
            :num_results, :uint
   end
 

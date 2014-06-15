@@ -26,9 +26,9 @@ module FFI::Gen::Clang
     layout :kind, :idx_entity_ref_kind,
            :cursor, Cursor.by_value,
            :loc, IdxLoc.by_value,
-           :referenced_entity, IdxEntityInfo,
-           :parent_entity, IdxEntityInfo,
-           :container, IdxContainerInfo
+           :referenced_entity, IdxEntityInfo.by_ref,
+           :parent_entity, IdxEntityInfo.by_ref,
+           :container, IdxContainerInfo.by_ref
   end
 
 end

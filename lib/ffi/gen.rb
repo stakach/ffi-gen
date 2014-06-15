@@ -6,7 +6,7 @@ class FFI::Gen
   class << Clang
     def get_children(cursor)
       children = []
-      visit_children cursor, lambda { |child, child_parent, child_client_data|
+      visit_children cursor, ->(child, child_parent, child_client_data){
         children << child
         :continue
       }, nil
@@ -264,8 +264,10 @@ class FFI::Gen
   end
 
   class UnknownType < Type
+    attr_writer :name
+
     def name
-      Name.new ["unknown"]
+      @name || Name.new(["unknown"])
     end
   end
 
@@ -324,7 +326,7 @@ class FFI::Gen
     return @declarations unless @declarations.nil?
 
     header_files = []
-    Clang.get_inclusions translation_unit, ->(included_file, include_length, client_data){
+    Clang.get_inclusions translation_unit, ->(included_file, inclusion_stack, include_length, client_data){
       filename = Clang.get_file_name(included_file).to_s_and_dispose
       header_files << included_file if @headers.any? { |header| header.is_a?(Regexp) ? header =~ filename : filename.end_with?(header) }
     }, nil
@@ -522,36 +524,25 @@ class FFI::Gen
         function
 
       when :typedef_decl
-        typedef_children = Clang.get_children declaration_cursor
-        if typedef_children.size == 1
-          type = Clang.get_cursor_type(typedef_children.first)
+        typedef_children = Clang.get_children(declaration_cursor)
+        canonical_type = Clang.get_canonical_type(Clang.get_cursor_type(declaration_cursor))
+        pointee_type = Clang.get_pointee_type(canonical_type)
 
-          if child_declaration = @declarations_by_type[type]
-            child_declaration.name = name if child_declaration and child_declaration.name.nil?
-            nil
-          else
-            param_decl = typedef_children.first
-            param_name = read_name param_decl
-            param_type = resolve_type(Clang.get_cursor_type(param_decl))
-            param_name ||= param_type.name
-            return_type = resolve_type(type)
-            parameters = [{ name:param_name, type:param_type, description: [] }]
-            FunctionOrCallback.new self, name, parameters, return_type, true, false, comment, []
-          end
-        elsif typedef_children.size > 1
-          return_type = resolve_type Clang.get_cursor_type(typedef_children.first)
-          parameters = []
-          typedef_children[1..-1].each do |pd|
-            param_name = read_name(pd)
-            param_type = resolve_type(Clang.get_cursor_type(pd))
-            param_name ||= param_type.name
-            parameters << { name:param_name, type: param_type, description: [] }
+        if pointee_type[:kind] == :function_proto
+          return_type = resolve_type(Clang.get_result_type pointee_type)
+          parameters = Array.new(Clang.get_num_arg_types pointee_type) do |i|
+            { name: read_name(typedef_children[i]), 
+              type: resolve_type(Clang.get_arg_type(pointee_type, i)), 
+              description: [] }
           end
           FunctionOrCallback.new self, name, parameters, return_type, true, false, comment, []
+        elsif typedef_children.size > 0
+          child_declaration = @declarations_by_type[Clang.get_cursor_type(typedef_children.first)]
+          child_declaration.name = name if child_declaration # and child_declaration.name.nil?
+          nil
         else
           nil
         end
-
       when :macro_definition
       else
         raise declaration_cursor[:kind].to_s

@@ -13,11 +13,11 @@ module FFI::Gen::Clang
   # :protocols ::
   #   (IdxObjCProtocolRefListInfo)
   class IdxObjCCategoryDeclInfo < FFI::Struct
-    layout :container_info, IdxObjCContainerDeclInfo,
-           :objc_class, IdxEntityInfo,
+    layout :container_info, IdxObjCContainerDeclInfo.by_ref,
+           :objc_class, IdxEntityInfo.by_ref,
            :class_cursor, Cursor.by_value,
            :class_loc, IdxLoc.by_value,
-           :protocols, IdxObjCProtocolRefListInfo
+           :protocols, IdxObjCProtocolRefListInfo.by_ref
   end
 
 end
