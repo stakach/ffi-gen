@@ -1,18 +1,79 @@
 class FFI::Gen
   def generate_rb
     writer = Writer.new "  ", "# "
-    writer.puts "require 'ffi'", "", "module #{@module_name}"
+    writer.puts "require 'ffi'"
+    writer.puts "require '#{@require_path}/enums'"
+    writer.puts ''
+    writer.puts "module #{@module_name}"
     writer.indent do
       writer.puts "extend FFI::Library"
       writer.puts "ffi_lib_flags #{@ffi_lib_flags.map(&:inspect).join(', ')}" if @ffi_lib_flags
-      writer.puts "ffi_lib #{@ffi_lib.inspect}", "" if @ffi_lib
+      writer.puts "ffi_lib #{@ffi_lib}", "" if @ffi_lib
+
+      @full_dir = File.expand_path(@output + '/../' + File.basename(@output, '.*'))
+      Dir.mkdir(@full_dir) unless File.exist?(@full_dir)
+      @base_dir = File.basename(@full_dir)
+
+      # Let's write type autoload
+      declarations.each do |declaration|
+        next unless declaration.kind_of?(StructOrUnion)
+
+        writer.puts "autoload :#{declaration.name.to_ruby_classname}, '#{@require_path}/#{declaration.name.to_ruby_downcase}'"
+      end
+      writer.puts ''
+
+      generate_struct_rb
+      generate_enums_rb
+
+      declarations.select(&:is_callback).each do |declaration|
+        declaration.write_ruby writer
+        declarations.delete declaration
+      end
 
       declarations.each do |declaration|
         declaration.write_ruby writer
       end
+
     end
     writer.puts "end"
     writer.output
+  end
+
+  def generate_enums_rb
+    writer = Writer.new "  ", "# "
+    writer.puts "module #{@module_name}"
+    writer.indent do
+      writer.puts "extend FFI::Library"
+      empty = !declarations.any?{ |d| d.kind_of?(Enum) }
+      while not empty
+        empty = true
+        declarations.each do |declaration|
+          next unless declaration.kind_of?(Enum)
+          declaration.write_ruby writer
+          declarations.delete declaration
+          empty = false
+        end
+      end
+    end
+    writer.puts 'end'
+    File.write("#{@full_dir}/enums.rb", writer.output)
+  end
+
+  def generate_struct_rb
+    empty = !declarations.any?{ |d| d.kind_of?(StructOrUnion) }
+    while not empty
+      empty = true
+      declarations.each do |declaration|
+        next unless declaration.kind_of?(StructOrUnion)
+        writer = Writer.new "  ", "# "
+        writer.puts "module #{@module_name}"
+        writer.indent { declaration.write_ruby(writer) }
+        writer.puts "end"
+        declarations.delete declaration
+        File.write("#{@full_dir}/#{declaration.name.to_ruby_downcase}.rb", writer.output)
+        empty = false
+      end
+    end
   end
 
   class Name
@@ -48,7 +109,6 @@ class FFI::Gen
 
       writer.comment do
         writer.write_description @description
-        writer.puts "", "_This entry is only for documentation and no real method. The FFI::Enum can be accessed via `#enum_type(:#{ruby_name})`._"
         writer.puts "", "## Options:"
         @constants.each do |constant|
           writer.puts "#{constant[:symbol]} ::"
@@ -128,19 +188,15 @@ class FFI::Gen
         end
       end
       writer.puts "end", ""
-
-      @written = true
     end
 
     def ruby_name
-      @ruby_name ||= @name.to_ruby_classname if @name
+      @name.to_ruby_classname
     end
 
     def ruby_ffi_type
-      unless @written
-        warn 'dependency %s not written' % ruby_name
-      end
       ruby_name
+      # "#{ruby_name}.by_ref"
     end
 
     def ruby_description
@@ -257,7 +313,11 @@ class FFI::Gen
     end
 
     def ruby_ffi_type
-      "#{@inner_type.ruby_ffi_type}.by_value"
+      if @inner_type.is_a?(StructOrUnion)
+        @inner_type.ruby_name
+      else
+        @inner_type.ruby_ffi_type
+      end + ".by_value"
     end
   end
 

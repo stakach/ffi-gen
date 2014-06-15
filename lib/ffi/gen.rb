@@ -107,6 +107,10 @@ class FFI::Gen
       @types = []
       @written = false
     end
+
+    def is_union?
+      @is_union
+    end
   end
 
   class FunctionOrCallback < Type
@@ -277,6 +281,7 @@ class FFI::Gen
     @blocking      = options.fetch :blocking, []
     @ffi_lib_flags = options.fetch :ffi_lib_flags, nil
     @output        = options.fetch :output, $stdout
+    @require_path  = options.fetch :require_path, ''
 
     @translation_unit = nil
     @declarations = nil
@@ -687,7 +692,8 @@ end
 if __FILE__ == $0
   FFI::Gen.generate(
     module_name: "FFI::Gen::Clang",
-    ffi_lib:     "clang",
+    require_path: 'ffi/gen/clang',
+    ffi_lib:     "'clang'",
     headers:     ["clang-c/CXString.h", "clang-c/Index.h"],
     cflags:      `llvm-config --cflags`.split(" "),
     prefixes:    ["clang_", "CX"],
