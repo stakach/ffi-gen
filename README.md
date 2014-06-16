@@ -1,5 +1,4 @@
-ffi-gen - A generator for Ruby FFI bindings
--------------------------------------------
+# A generator for Ruby FFI bindings
 
 * **Author:** Richard Musiol, Davide D'Agostino (DAddYE)
 * **Contributors:** Jeremy Voorhis (thanks for the initial idea)  
@@ -7,7 +6,7 @@ ffi-gen - A generator for Ruby FFI bindings
 
 **ffi-gen is a completely automatic generator for [FFI](https://github.com/ffi/ffi/wiki) wrappers around C libraries. It uses [LLVM's Clang](http://clang.llvm.org/) compiler as a backend for fully processing the header files of a given library.**
 
-### Features
+## Features
 
 * Generation of FFI methods, structures, unions, enumerations and callbacks
 * Generation of YARD documentation comments
@@ -16,7 +15,7 @@ ffi-gen - A generator for Ruby FFI bindings
   * Clang
   * LLVM
 
-### Requirements
+## Requirements
 
 * Ruby 2.0
 * Clang 3.4.1 (`brew install llvm --with-clang; brew link llvm`)
@@ -24,7 +23,7 @@ ffi-gen - A generator for Ruby FFI bindings
 *These requirements are only for running the generator. The generated files are Ruby 2.0 compatible and do not need Clang.*
 
 
-### Example
+## Example
 
 Use the following interface in a script or Rake task:
 
@@ -44,7 +43,7 @@ Output: [clang.rb](https://github.com/DAddYE/ffi-gen/blob/master/lib/ffi/gen/cla
 
 Other generated files can be found in the [clang](https://github.com/DAddYE/ffi-gen/tree/master/lib/ffi/gen/clang) directory.
 
-### Hints
+## Hints
 
 You may need to set additional include directories:
 
@@ -57,19 +56,17 @@ Your GCC include paths can be seen with:
 What is `require_path`? It's used to autoload files, see
 [here](https://github.com/DAddYE/ffi-gen/blob/master/lib/ffi/gen/clang.rb#L8-L43)
 
-### Projects using ffi_gen
+## Projects using ffi_gen
 
 * https://github.com/jvoorhis/ruby-llvm
 * https://github.com/daddye/uv
 * https://github.com/daddye/leveldb
 
-Roadmap
--------
+## Roadmap
 
 * Automatic generation of object oriented wrappers
 * Polish YARD documentation comments some more
 
+## Feedback
 
-Feedback
---------
 Please use GitHub's issue tracker for problems or suggestions. Pull requests are welcome, too.
