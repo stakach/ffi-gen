@@ -1,5 +1,5 @@
 ffi-gen - A generator for Ruby FFI bindings
-===========================================
+-------------------------------------------
 
 *Author:* Richard Musiol, Davide D'Agostino (DAddYE)
 *Contributors:* Jeremy Voorhis (thanks for the initial idea)  
@@ -9,6 +9,7 @@ ffi-gen - A generator for Ruby FFI bindings
 
 Features
 --------
+
 * Generation of FFI methods, structures, unions, enumerations and callbacks
 * Generation of YARD documentation comments
 * Tested with headers of the following libraries:
