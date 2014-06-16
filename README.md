@@ -1,7 +1,7 @@
 ffi-gen - A generator for Ruby FFI bindings
 ===========================================
 
-*Author:* Richard Musiol  
+*Author:* Richard Musiol, Davide D'Agostino (DAddYE)
 *Contributors:* Jeremy Voorhis (thanks for the initial idea)  
 *License:* MIT (see LICENSE)
 
@@ -12,22 +12,17 @@ Features
 * Generation of FFI methods, structures, unions, enumerations and callbacks
 * Generation of YARD documentation comments
 * Tested with headers of the following libraries:
-  * Cairo
-  * CEF (Chromium Embedded Framework)
+  * Libuv
   * Clang
-  * LibSSH2
   * LLVM
-  * OpenGL
-  * SQLite3
-
 
 Requirements
 ------------
 
-* Ruby 1.9
-* Clang 3.0 ([Download](http://llvm.org/releases/download.html#3.0), use the binaries or configure with ``--enable-shared``)
+* Ruby 2.0
+* Clang 3.4.1 (`brew install llvm --with-clang; brew link llvm`)
 
-*These requirements are only for running the generator. The generated files are Ruby 1.8 compatible and do not need Clang.*
+*These requirements are only for running the generator. The generated files are Ruby 2.0 compatible and do not need Clang.*
 
 
 Example
@@ -35,20 +30,20 @@ Example
 Use the following interface in a script or Rake task:
 
     require "ffi/gen"
-    
+
     FFI::Gen.generate(
-      module_name: "Clang",
-      ffi_lib:     "clang",
-      headers:     ["clang-c/Index.h"],
-      cflags:      `llvm-config --cflags`.split(" "),
-      prefixes:    ["clang_", "CX"],
-      output:      "clang-c/index.rb"
+      module_name:  "FFI::Gen::Clang",
+      require_path: "ffi/en/clang",
+      ffi_lib:      "'clang'",
+      headers:      ["clang-c/CXString.h", "clang-c/Index.h"],
+      cflags:       `llvm-config --cflags`.split(" "),
+      prefixes:     ["clang_", "CX"],
+      output:       File.join(File.dirname(__FILE__), "gen/clang.rb")
     )
 
-Output: [clang-c/index.rb](https://github.com/neelance/ffi-gen/blob/master/test/output/clang-c/Index.rb)
+Output: [clang.rb](https://github.com/DAddYE/ffi-gen/blob/master/lib/ffi/gen/clang.rb)
 
-Other generated files can be found in the [test/output](https://github.com/neelance/ffi-gen/tree/master/test/output) directory.
-
+Other generated files can be found in the [clang](https://github.com/DAddYE/ffi-gen/tree/master/lib/ffi/gen/clang) directory.
 
 Hints
 -----
@@ -61,6 +56,8 @@ Your GCC include paths can be seen with:
 
     `gcc -print-prog-name=cc1` -v
 
+What is `require_path`? It's used to autoload files, see
+[here](https://github.com/DAddYE/ffi-gen/blob/master/lib/ffi/gen/clang.rb#L8-L43)
 
 Projects using ffi_gen
 ----------------------
@@ -71,8 +68,6 @@ Projects using ffi_gen
 Roadmap
 -------
 
-* Support for more libraries:
-  * (Write me if you have a whish)
 * Automatic generation of object oriented wrappers
 * Polish YARD documentation comments some more
 
