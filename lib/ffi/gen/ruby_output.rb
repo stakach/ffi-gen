@@ -8,7 +8,7 @@ class FFI::Gen
     writer.indent do
       writer.puts "extend FFI::Library"
       writer.puts "ffi_lib_flags #{@ffi_lib_flags.map(&:inspect).join(', ')}" if @ffi_lib_flags
-      writer.puts "ffi_lib #{@ffi_lib}", "" if @ffi_lib
+      writer.puts "ffi_lib #{@ffi_lib.inspect}", "" if @ffi_lib
 
       @full_dir = File.expand_path(@output + '/../' + File.basename(@output, '.*'))
       Dir.mkdir(@full_dir) unless File.exist?(@full_dir)
@@ -114,10 +114,10 @@ class FFI::Gen
           writer.puts "#{constant[:symbol]} ::"
           writer.write_description constant[:comment], false, "  ", "  "
         end
-        writer.puts "", "@method `enum_#{ruby_name}`", "@return [Symbol]", "@scope class", ""
+        writer.puts "", "@method `enum_#{@name.to_ruby_downcase}`", "@return [Symbol]", "@scope class", ""
       end
 
-      writer.puts "enum :#{ruby_name}, ["
+      writer.puts "#{@name.to_ruby_classname} = enum ["
       writer.indent do
         writer.write_array @constants, "," do |constant|
           "#{constant[:symbol]}, #{constant[:value]}"
@@ -127,15 +127,15 @@ class FFI::Gen
     end
 
     def ruby_name
-      @ruby_name ||= @name.to_ruby_downcase
+      @ruby_name ||= @name.to_ruby_classname
     end
 
     def ruby_ffi_type
-      ":#{ruby_name}"
+      ruby_name
     end
 
     def ruby_description
-      "Symbol from `enum_#{ruby_name}`"
+      ruby_name
     end
   end
 

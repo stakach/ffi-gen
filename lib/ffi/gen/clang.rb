@@ -60,7 +60,7 @@ module FFI::Gen::Clang
   # @return [Symbol from `enum_child_visit_result`]
   # @scope class
   #
-  callback :cursor_visitor, [Cursor.by_value, Cursor.by_value, :pointer], :child_visit_result
+  callback :cursor_visitor, [:child_visit_result, Cursor.by_value, Cursor.by_value, :pointer], :child_visit_result
 
   # Visitor invoked for each cursor found by a traversal.
   #

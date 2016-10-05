@@ -6,7 +6,7 @@ class FFI::Gen
   class << Clang
     def get_children(cursor)
       children = []
-      visit_children cursor, ->(child, child_parent, child_client_data){
+      visit_children cursor, ->(visit_result, child, child_parent, child_client_data){
         children << child
         :continue
       }, nil
@@ -515,6 +515,7 @@ class FFI::Gen
           while fn_name = function_name_parts.first and type_prefix.start_with?(fn_name.downcase)
             type_prefix = type_prefix[function_name_parts.first.size..-1]
             function_name_parts.shift
+            break if function_name_parts.empty?
           end
           if type_prefix.empty?
             pointee_declaration.oo_functions << [Name.new(function_name_parts), function]
@@ -623,6 +624,8 @@ class FFI::Gen
       ArrayType.new resolve_type(Clang.get_array_element_type(canonical_type)), Clang.get_array_size(canonical_type)
     when :unexposed, :function_proto, :invalid
       UnknownType.new
+    when :incomplete_array
+      PointerType.new resolve_type(Clang.get_array_element_type(canonical_type)).name, 1
     else
       raise NotImplementedError, "No translation for values of type #{canonical_type[:kind]} (#{Clang.get_type_spelling(full_type).to_s_and_dispose})"
     end
@@ -685,7 +688,7 @@ if __FILE__ == $0
     module_name: "FFI::Gen::Clang",
     require_path: 'ffi/gen/clang',
     ffi_lib:     "'clang'",
-    headers:     ["clang-c/CXString.h", "clang-c/Index.h"],
+    headers:     ["clang-c/CXErrorCode.h", "clang-c/CXString.h", "clang-c/Index.h"],
     cflags:      `llvm-config --cflags`.split(" "),
     prefixes:    ["clang_", "CX"],
     output:      File.join(File.dirname(__FILE__), "gen/clang.rb")
